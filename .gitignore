@@ -33,3 +33,7 @@ npm-debug.log*
 # Temporary files
 tmp/
 temp/
+
+# Docker infrastructure (kept separately in ~/docker/crime-script)
+docker-compose.yml
+postgres-data/
