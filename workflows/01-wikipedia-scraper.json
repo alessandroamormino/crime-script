@@ -71,6 +71,59 @@
       ],
       "id": "a5d54da8-4f2a-49d9-a873-dc6df8854b72",
       "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a true crime podcast script writer. Based on the following Wikipedia summary about a true crime case, create a detailed podcast episode outline.\n\nCASE: {{ $json.case_name }}\nSUMMARY: {{ $json.raw_text }}\n\nCreate a JSON response with this structure:\n{\n  \"title\": \"Episode title\",\n  \"hook\": \"Attention-grabbing opening (2-3 sentences)\",\n  \"act1_intro\": \"Introduction and context (what happened)\",\n  \"act2_investigation\": \"The investigation and key events\",\n  \"act3_resolution\": \"Resolution and aftermath\",\n  \"teaser\": \"Cliffhanger for next episode or final thoughts\",\n  \"key_facts\": [\"fact1\", \"fact2\", \"fact3\"],\n  \"timeline\": [\"event1: date\", \"event2: date\"]\n}\n\nRespond ONLY with valid JSON, no markdown formatting.\nTranslate everything you find in Italian. \nThe output will be in Italian language.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        768,
+        0
+      ],
+      "id": "2245fe53-40fc-4c11-9624-55627b506b29",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-20250514",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        624,
+        368
+      ],
+      "id": "90442a80-bfcf-479c-86fe-06bbb2dfdd01",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "wlJMxwO6dyOqmxdV",
+          "name": "Anthropic account"
+        }
+      },
+      "notes": "You are a true crime podcast script writer. Based on the following Wikipedia summary about a true crime case, create a detailed podcast episode outline.\n\nCASE: {{ $json.case_name }}\nSUMMARY: {{ $json.raw_text }}\n\nCreate a JSON response with this structure:\n{\n  \"title\": \"Episode title\",\n  \"hook\": \"Attention-grabbing opening (2-3 sentences)\",\n  \"act1_intro\": \"Introduction and context (what happened)\",\n  \"act2_investigation\": \"The investigation and key events\",\n  \"act3_resolution\": \"Resolution and aftermath\",\n  \"teaser\": \"Cliffhanger for next episode or final thoughts\",\n  \"key_facts\": [\"fact1\", \"fact2\", \"fact3\"],\n  \"timeline\": [\"event1: date\", \"event2: date\"]\n}\n\nRespond ONLY with valid JSON, no markdown formatting."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse la risposta AI\nlet outline;\ntry {\n  // Anthropic restituisce la risposta in un formato diverso\n  const aiResponse = $input.item.json.text || $input.item.json.message?.content || $input.item.json.response;\n  \n  // Rimuove eventuali backtick markdown\n  const cleanJson = aiResponse.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n  outline = JSON.parse(cleanJson);\n} catch (error) {\n  return {\n    json: {\n      error: \"Failed to parse AI response\",\n      raw_ai_output: $input.item.json,\n      error_message: error.message\n    }\n  };\n}\n\nreturn {\n  json: {\n    case_name: $('Code in JavaScript1').item.json.case_name,\n    wiki_url: $('Code in JavaScript1').item.json.wiki_url,\n    outline: outline,\n    generated_at: new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1072,
+        0
+      ],
+      "id": "afe0946e-9e0a-4cca-bbcf-c2958bb63499",
+      "name": "Code in JavaScript2"
     }
   ],
   "pinData": {},
@@ -107,14 +160,48 @@
           }
         ]
       ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "a6bacc60-1a15-4b1e-8ccd-516881a98d1f",
+  "versionId": "6c5bc594-5027-4691-acd8-66edc2e7d4f1",
   "meta": {
+    "templateCredsSetupCompleted": true,
     "instanceId": "672f0c1e027970f7c993323f9843bc22973e8f4cd989bae535dc30945ac51c47"
   },
   "id": "Qmv7gnifKYOCj0x2",
