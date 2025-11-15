@@ -19,19 +19,6 @@
     },
     {
       "parameters": {
-        "jsCode": "// Il dato arriva nel body del webhook\nconst caseName = $input.item.json.body.case_name;\n\n// Trasforma il nome in formato URL Wikipedia\nconst wikiUrl = `https://en.wikipedia.org/wiki/${caseName.replace(/ /g, '_')}`;\n\nreturn {\n  json: {\n    case_name: caseName,\n    wiki_url: wikiUrl\n  }\n};"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        192,
-        0
-      ],
-      "id": "fd2858e8-a4f4-49bb-92b7-06fa74e03f69",
-      "name": "Code in JavaScript"
-    },
-    {
-      "parameters": {
         "url": "={{ $json.wiki_url }}",
         "sendHeaders": true,
         "headerParameters": {
@@ -61,60 +48,144 @@
     },
     {
       "parameters": {
-        "jsCode": "const html = $input.item.json.data;\n\n// Rimuove tag HTML basilari (regex semplice per MVP)\nconst text = html\n  .replace(/<script\\b[^<]*(?:(?!<\\/script>)<[^<]*)*<\\/script>/gi, '')\n  .replace(/<style\\b[^<]*(?:(?!<\\/style>)<[^<]*)*<\\/style>/gi, '')\n  .replace(/<[^>]+>/g, '')\n  .replace(/\\s+/g, ' ')\n  .trim();\n\n// Prendi primi 3000 caratteri\nconst summary = text.substring(0, 3000);\n\nreturn {\n  json: {\n    case_name: $input.item.json.case_name,\n    wiki_url: $input.item.json.wiki_url,\n    raw_text: summary\n  }\n};"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        576,
-        0
-      ],
-      "id": "a5d54da8-4f2a-49d9-a873-dc6df8854b72",
-      "name": "Code in JavaScript1"
-    },
-    {
-      "parameters": {
         "promptType": "define",
-        "text": "=You are a true crime podcast script writer. Based on the following Wikipedia summary about a true crime case, create a detailed podcast episode outline.\n\nCASE: {{ $json.case_name }}\nSUMMARY: {{ $json.raw_text }}\n\nCreate a JSON response with this structure:\n{\n  \"title\": \"Episode title\",\n  \"hook\": \"Attention-grabbing opening (2-3 sentences)\",\n  \"act1_intro\": \"Introduction and context (what happened)\",\n  \"act2_investigation\": \"The investigation and key events\",\n  \"act3_resolution\": \"Resolution and aftermath\",\n  \"teaser\": \"Cliffhanger for next episode or final thoughts\",\n  \"key_facts\": [\"fact1\", \"fact2\", \"fact3\"],\n  \"timeline\": [\"event1: date\", \"event2: date\"]\n}\n\nRespond ONLY with valid JSON, no markdown formatting.\nTranslate everything you find in Italian. \nThe output will be in Italian language.",
+        "text": "=Write ACT 1 of EPISODE {{ $('Format Outline').item.json.outline.episode_number }} (of {{ $('Format Outline').item.json.outline.total_episodes }}) - true crime podcast script (6-7 minutes, 1000-1200 words).\n\nEPISODE TITLE: {{ $('Format Outline').item.json.outline.episode_title }}\nOUTLINE ACT 1: {{ $('Format Outline').item.json.outline.act1_intro }}\n\nIMPORTANT: This is episode {{ $('Format Outline').item.json.outline.episode_number }}, so reference previous episodes if relevant.\n\nStart with:\n- \"[INTRO MUSIC]\"\n- \"Benvenuti a CrimeScript. Questo è l'episodio {{ $('Format Outline').item.json.outline.episode_number }}: {{ $('Format Outline').item.json.outline.episode_title }}\"\n\nLanguage: ITALIAN\nMinimum 1000 words.",
         "batching": {}
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
       "position": [
-        768,
+        1296,
         0
       ],
-      "id": "2245fe53-40fc-4c11-9624-55627b506b29",
-      "name": "Basic LLM Chain"
+      "id": "91e51d9a-79d3-462b-a049-12356d28ddf4",
+      "name": "Generate Act 1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write ACT 2 of EPISODE {{ $('Format Outline').item.json.outline.episode_number }} - true crime podcast script (8-10 minutes, 1400-1600 words).\n\nOUTLINE ACT 2: {{ $('Format Outline').item.json.outline.act2_investigation }}\n\nIMPORTANT: This is episode {{ $('Format Outline').item.json.outline.episode_number }} of {{ $('Format Outline').item.json.outline.total_episodes }}.\n\nLanguage: ITALIAN\nMinimum 1400 words.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1616,
+        0
+      ],
+      "id": "f6c53108-d4c2-43ac-a61f-3956c72d9a8f",
+      "name": "Generate Act 2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write ACT 3 of EPISODE {{ $('Format Outline').item.json.outline.episode_number }} - true crime podcast script (5-6 minutes, 900-1000 words).\n\nOUTLINE ACT 3: {{ $('Format Outline').item.json.outline.act3_resolution }}\nCLIFFHANGER: {{ $('Format Outline').item.json.outline.cliffhanger }}\n\nCRITICAL: \n- If this is NOT the final episode ({{ $('Format Outline').item.json.outline.episode_number }} < {{ $('Format Outline').item.json.outline.total_episodes }}), END with a dramatic cliffhanger\n- If this IS the final episode, provide closure but tease potential related cases\n\nEnd with \"[OUTRO MUSIC]\"\n\nLanguage: ITALIAN\nMinimum 900 words.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1936,
+        0
+      ],
+      "id": "28495e94-a38a-4fa5-a94e-96a057e92725",
+      "name": "Generate Act 3"
+    },
+    {
+      "parameters": {
+        "jsCode": "const act1 = $('Generate Act 1').item.json.text;\nconst act2 = $('Generate Act 2').item.json.text;\nconst act3 = $('Generate Act 3').item.json.text;\n\nconst fullScript = `${act1}\\n\\n---\\n\\n${act2}\\n\\n---\\n\\n${act3}`;\n\nreturn {\n  json: {\n    text: fullScript\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2256,
+        0
+      ],
+      "id": "01ccbd7f-65e9-4b39-b3c3-9c96e4118ed3",
+      "name": "Merge Scripts"
+    },
+    {
+      "parameters": {
+        "jsCode": "const outline = $('Format Outline').item.json.outline;\nconst fullScript = $('Merge Scripts').item.json.text;\n\n// Recupera case_name dal nodo \"Prepare URL\"\nconst caseName = $('Prepare URL').item.json.case_name;\nconst episodeNumber = outline.episode_number;\nconst totalEpisodes = outline.total_episodes;\n\nreturn {\n  json: {\n    // Identificatori\n    case_name: caseName,\n    episode_number: episodeNumber,\n    total_episodes: totalEpisodes,\n    episode_title: outline.episode_title,\n    \n    // URLs\n    wiki_url: $('Prepare URL').item.json.wiki_url,\n    \n    // Contenuti\n    outline: outline,\n    full_script: fullScript,\n    \n    // Metadata\n    word_count: fullScript.split(/\\s+/).length,\n    estimated_duration_minutes: Math.round(fullScript.split(/\\s+/).length / 150),\n    generated_at: new Date().toISOString(),\n    \n    // Pricing info\n    is_final_episode: episodeNumber === totalEpisodes,\n    \n    // Export\n    filename_suggestion: `${caseName.replace(/ /g, '_')}_EP${episodeNumber}_of_${totalEpisodes}_script.txt`\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2464,
+        0
+      ],
+      "id": "adbd6c05-1b00-4d1f-b677-1f4b6ae6e387",
+      "name": "Generate Full Script - JSON"
     },
     {
       "parameters": {
         "model": {
           "__rl": true,
           "value": "claude-sonnet-4-20250514",
-          "mode": "id"
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 4"
         },
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        624,
-        368
+        1216,
+        464
       ],
-      "id": "90442a80-bfcf-479c-86fe-06bbb2dfdd01",
-      "name": "Anthropic Chat Model",
+      "id": "b65e7089-a492-4a42-a4d2-808e04394d82",
+      "name": "Claude Sonnet ",
       "credentials": {
         "anthropicApi": {
           "id": "wlJMxwO6dyOqmxdV",
           "name": "Anthropic account"
         }
-      },
-      "notes": "You are a true crime podcast script writer. Based on the following Wikipedia summary about a true crime case, create a detailed podcast episode outline.\n\nCASE: {{ $json.case_name }}\nSUMMARY: {{ $json.raw_text }}\n\nCreate a JSON response with this structure:\n{\n  \"title\": \"Episode title\",\n  \"hook\": \"Attention-grabbing opening (2-3 sentences)\",\n  \"act1_intro\": \"Introduction and context (what happened)\",\n  \"act2_investigation\": \"The investigation and key events\",\n  \"act3_resolution\": \"Resolution and aftermath\",\n  \"teaser\": \"Cliffhanger for next episode or final thoughts\",\n  \"key_facts\": [\"fact1\", \"fact2\", \"fact3\"],\n  \"timeline\": [\"event1: date\", \"event2: date\"]\n}\n\nRespond ONLY with valid JSON, no markdown formatting."
+      }
     },
     {
       "parameters": {
-        "jsCode": "// Parse la risposta AI\nlet outline;\ntry {\n  // Anthropic restituisce la risposta in un formato diverso\n  const aiResponse = $input.item.json.text || $input.item.json.message?.content || $input.item.json.response;\n  \n  // Rimuove eventuali backtick markdown\n  const cleanJson = aiResponse.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n  outline = JSON.parse(cleanJson);\n} catch (error) {\n  return {\n    json: {\n      error: \"Failed to parse AI response\",\n      raw_ai_output: $input.item.json,\n      error_message: error.message\n    }\n  };\n}\n\nreturn {\n  json: {\n    case_name: $('Code in JavaScript1').item.json.case_name,\n    wiki_url: $('Code in JavaScript1').item.json.wiki_url,\n    outline: outline,\n    generated_at: new Date().toISOString()\n  }\n};"
+        "jsCode": "const caseName = $input.item.json.body.case_name;\nconst episodeNumber = $input.item.json.body.episode_number || 1;\nconst totalEpisodes = $input.item.json.body.total_episodes || 3;\n\nconst wikiUrl = `https://en.wikipedia.org/wiki/${caseName.replace(/ /g, '_')}`;\n\nreturn {\n  json: {\n    case_name: caseName,\n    episode_number: episodeNumber,\n    total_episodes: totalEpisodes,\n    wiki_url: wikiUrl\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        0
+      ],
+      "id": "fd2858e8-a4f4-49bb-92b7-06fa74e03f69",
+      "name": "Prepare URL"
+    },
+    {
+      "parameters": {
+        "jsCode": "const html = $input.item.json.data;\n\n// Rimuove tag HTML basilari (regex semplice per MVP)\nconst text = html\n  .replace(/<script\\b[^<]*(?:(?!<\\/script>)<[^<]*)*<\\/script>/gi, '')\n  .replace(/<style\\b[^<]*(?:(?!<\\/style>)<[^<]*)*<\\/style>/gi, '')\n  .replace(/<[^>]+>/g, '')\n  .replace(/\\s+/g, ' ')\n  .trim();\n\n// Prendi primi 3000 caratteri\nconst summary = text.substring(0, 3000);\n\nreturn {\n  json: {\n    case_name: $input.item.json.case_name,\n    wiki_url: $input.item.json.wiki_url,\n    raw_text: summary\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        0
+      ],
+      "id": "a5d54da8-4f2a-49d9-a873-dc6df8854b72",
+      "name": "Extract Text"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a true crime podcast series writer. Create an outline for EPISODE {{ $json.episode_number }} of {{ $json.total_episodes }} about this case.\n\nCASE: {{ $json.case_name }}\nEPISODE: {{ $json.episode_number }} of {{ $json.total_episodes }}\nWIKIPEDIA SUMMARY: {{ $('Extract Text').item.json.raw_text }}\n\nCreate a detailed outline for THIS SPECIFIC EPISODE that:\n- Covers approximately 1/3 of the total story (this is episode {{ $json.episode_number }} of {{ $json.total_episodes }})\n- Has a compelling cliffhanger ending to hook listeners for the next episode\n- Feels complete but leaves them wanting more\n\nEpisode breakdown guide:\n- Episode 1: Early life, first crimes, initial investigation\n- Episode 2: Escalation, manhunt, captures and escapes\n- Episode 3: Final capture, trial, execution, legacy\n\nRespond with JSON:\n{\n  \"episode_title\": \"Compelling episode-specific title\",\n  \"episode_number\": {{ $json.episode_number }},\n  \"total_episodes\": {{ $json.total_episodes }},\n  \"hook\": \"Episode-specific hook\",\n  \"act1_intro\": \"What happens in act 1 of THIS episode\",\n  \"act2_investigation\": \"What happens in act 2 of THIS episode\",\n  \"act3_resolution\": \"What happens in act 3 - MUST end with cliffhanger for next episode (unless this is the final episode)\",\n  \"cliffhanger\": \"The suspenseful moment that makes them want the next episode\",\n  \"key_facts\": [\"relevant facts for this episode\"],\n  \"timeline\": [\"events covered in this episode\"]\n}\n\nLanguage: ITALIAN\nONLY JSON, no markdown.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        752,
+        0
+      ],
+      "id": "2245fe53-40fc-4c11-9624-55627b506b29",
+      "name": "Generate Outline"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse la risposta AI\nlet outline;\ntry {\n  // Anthropic restituisce la risposta in un formato diverso\n  const aiResponse = $input.item.json.text || $input.item.json.message?.content || $input.item.json.response;\n  \n  // Rimuove eventuali backtick markdown\n  const cleanJson = aiResponse.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n  outline = JSON.parse(cleanJson);\n} catch (error) {\n  return {\n    json: {\n      error: \"Failed to parse AI response\",\n      raw_ai_output: $input.item.json,\n      error_message: error.message\n    }\n  };\n}\n\nreturn {\n  json: {\n    case_name: $('Extract Text').item.json.case_name,\n    wiki_url: $('Extract Text').item.json.wiki_url,\n    outline: outline,\n    generated_at: new Date().toISOString()\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -123,7 +194,7 @@
         0
       ],
       "id": "afe0946e-9e0a-4cca-bbcf-c2958bb63499",
-      "name": "Code in JavaScript2"
+      "name": "Format Outline"
     }
   ],
   "pinData": {},
@@ -132,18 +203,7 @@
       "main": [
         [
           {
-            "node": "Code in JavaScript",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Code in JavaScript": {
-      "main": [
-        [
-          {
-            "node": "HTTP Request",
+            "node": "Prepare URL",
             "type": "main",
             "index": 0
           }
@@ -154,40 +214,121 @@
       "main": [
         [
           {
-            "node": "Code in JavaScript1",
+            "node": "Extract Text",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Anthropic Chat Model": {
+    "Generate Act 1": {
+      "main": [
+        [
+          {
+            "node": "Generate Act 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Act 2": {
+      "main": [
+        [
+          {
+            "node": "Generate Act 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Act 3": {
+      "main": [
+        [
+          {
+            "node": "Merge Scripts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Scripts": {
+      "main": [
+        [
+          {
+            "node": "Generate Full Script - JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude Sonnet ": {
       "ai_languageModel": [
         [
           {
-            "node": "Basic LLM Chain",
+            "node": "Generate Act 1",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Generate Act 2",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Generate Act 3",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Generate Outline",
             "type": "ai_languageModel",
             "index": 0
           }
         ]
       ]
     },
-    "Basic LLM Chain": {
+    "Prepare URL": {
       "main": [
         [
           {
-            "node": "Code in JavaScript2",
+            "node": "HTTP Request",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Code in JavaScript1": {
+    "Extract Text": {
       "main": [
         [
           {
-            "node": "Basic LLM Chain",
+            "node": "Generate Outline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Outline": {
+      "main": [
+        [
+          {
+            "node": "Format Outline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Outline": {
+      "main": [
+        [
+          {
+            "node": "Generate Act 1",
             "type": "main",
             "index": 0
           }
@@ -199,7 +340,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "6c5bc594-5027-4691-acd8-66edc2e7d4f1",
+  "versionId": "16a41776-fb15-4d2d-a8a8-d214c01974d3",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "672f0c1e027970f7c993323f9843bc22973e8f4cd989bae535dc30945ac51c47"
