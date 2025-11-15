@@ -1,0 +1,122 @@
+{
+  "name": "CrimeScript - Scraper",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "e9725efd-6b4c-441d-a5d7-0c96efad2274",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1d0aa8a3-287c-4fe0-8b8f-8aff8e83594d",
+      "name": "Webhook",
+      "webhookId": "e9725efd-6b4c-441d-a5d7-0c96efad2274"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Il dato arriva nel body del webhook\nconst caseName = $input.item.json.body.case_name;\n\n// Trasforma il nome in formato URL Wikipedia\nconst wikiUrl = `https://en.wikipedia.org/wiki/${caseName.replace(/ /g, '_')}`;\n\nreturn {\n  json: {\n    case_name: caseName,\n    wiki_url: wikiUrl\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        0
+      ],
+      "id": "fd2858e8-a4f4-49bb-92b7-06fa74e03f69",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.wiki_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "CrimeScript/1.0 (Educational Research Bot)"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        368,
+        0
+      ],
+      "id": "ff2c39d5-174d-400c-969a-dda79f88c707",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const html = $input.item.json.data;\n\n// Rimuove tag HTML basilari (regex semplice per MVP)\nconst text = html\n  .replace(/<script\\b[^<]*(?:(?!<\\/script>)<[^<]*)*<\\/script>/gi, '')\n  .replace(/<style\\b[^<]*(?:(?!<\\/style>)<[^<]*)*<\\/style>/gi, '')\n  .replace(/<[^>]+>/g, '')\n  .replace(/\\s+/g, ' ')\n  .trim();\n\n// Prendi primi 3000 caratteri\nconst summary = text.substring(0, 3000);\n\nreturn {\n  json: {\n    case_name: $input.item.json.case_name,\n    wiki_url: $input.item.json.wiki_url,\n    raw_text: summary\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        0
+      ],
+      "id": "a5d54da8-4f2a-49d9-a873-dc6df8854b72",
+      "name": "Code in JavaScript1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a6bacc60-1a15-4b1e-8ccd-516881a98d1f",
+  "meta": {
+    "instanceId": "672f0c1e027970f7c993323f9843bc22973e8f4cd989bae535dc30945ac51c47"
+  },
+  "id": "Qmv7gnifKYOCj0x2",
+  "tags": []
+}
