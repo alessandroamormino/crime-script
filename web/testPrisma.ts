@@ -1,5 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import * as dotenv from 'dotenv';
+dotenv.config();  // legge .env nella root del progetto
 
+import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
@@ -8,9 +10,5 @@ async function main() {
 }
 
 main()
-  .catch(e => {
-    console.error(e);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+  .catch(e => console.error(e))
+  .finally(async () => await prisma.$disconnect());
