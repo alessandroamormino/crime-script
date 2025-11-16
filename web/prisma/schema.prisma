@@ -7,92 +7,101 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id                Int       @id @default(autoincrement())
-  email             String    @unique
-  password_hash     String
-  name              String?
-  stripe_customer_id String?  @unique
-  created_at        DateTime  @default(now())
-  updated_at        DateTime  @default(now())
-
-  purchases         Purchase[]
-  subscriptions     Subscription[]
-  case_bundles      CaseBundle[]
-}
-
 model Case {
-  id               Int       @id @default(autoincrement())
-  name             String    @unique
-  slug             String    @unique
-  wiki_url         String?
-  total_episodes   Int       @default(3)
-  description      String?
-  cover_image_url  String?
-  created_at       DateTime  @default(now())
-  updated_at       DateTime  @default(now())
+  id            Int          @id @default(autoincrement())
+  name          String       @unique @db.VarChar(255)
+  slug          String       @unique @db.VarChar(255)
+  wikiUrl       String?      @map("wiki_url")
+  totalEpisodes Int          @default(3) @map("total_episodes")
+  description   String?
+  coverImageUrl String?      @map("cover_image_url")
+  createdAt     DateTime?    @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt     DateTime?    @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  caseBundles   CaseBundle[]
+  episodes      Episode[]
 
-  episodes         Episode[]
-  case_bundles     CaseBundle[]
+  @@map("cases")
 }
 
 model Episode {
-  id                         Int       @id @default(autoincrement())
-  case_id                    Int?
-  episode_number             Int
-  episode_title              String
-  outline                    Json
-  full_script                String
-  word_count                 Int?
-  estimated_duration_minutes Int?
-  filename                   String?
-  is_final_episode           Boolean   @default(false)
-  price_cents                Int       @default(499)
-  created_at                 DateTime  @default(now())
-  updated_at                 DateTime  @default(now())
+  id                       Int        @id @default(autoincrement())
+  caseId                   Int?       @map("case_id")
+  episodeNumber            Int        @map("episode_number")
+  episodeTitle             String     @map("episode_title") @db.VarChar(255)
+  outline                  Json
+  fullScript               String     @map("full_script")
+  wordCount                Int?       @map("word_count")
+  estimatedDurationMinutes Int?       @map("estimated_duration_minutes")
+  filename                 String?    @db.VarChar(255)
+  isFinalEpisode           Boolean?   @default(false) @map("is_final_episode")
+  priceCents               Int?       @default(499) @map("price_cents")
+  createdAt                DateTime?  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt                DateTime?  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  case                     Case?      @relation(fields: [caseId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  purchases                Purchase[]
 
-  case       Case?     @relation(fields: [case_id], references: [id], onDelete: Cascade)
-  purchases  Purchase[]
+  @@unique([caseId, episodeNumber])
+  @@index([caseId], map: "idx_episodes_case_id")
+  @@index([outline], map: "idx_episodes_outline", type: Gin)
+  @@map("episodes")
+}
+
+model User {
+  id               Int            @id @default(autoincrement())
+  email            String         @unique @db.VarChar(255)
+  passwordHash     String         @map("password_hash") @db.VarChar(255)
+  name             String?        @db.VarChar(255)
+  stripeCustomerId String?        @unique @map("stripe_customer_id") @db.VarChar(255)
+  createdAt        DateTime?      @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt        DateTime?      @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  caseBundles      CaseBundle[]
+  purchases        Purchase[]
+  subscriptions    Subscription[]
+
+  @@map("users")
 }
 
 model Purchase {
-  id                       Int      @id @default(autoincrement())
-  user_id                  Int?
-  episode_id               Int?
-  price_paid_cents         Int
-  stripe_payment_intent_id String? @unique
-  purchased_at             DateTime @default(now())
+  id                    Int       @id @default(autoincrement())
+  userId                Int?      @map("user_id")
+  episodeId             Int?      @map("episode_id")
+  pricePaidCents        Int       @map("price_paid_cents")
+  stripePaymentIntentId String?   @unique @map("stripe_payment_intent_id") @db.VarChar(255)
+  purchasedAt           DateTime? @default(now()) @map("purchased_at") @db.Timestamp(6)
+  episode               Episode?  @relation(fields: [episodeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user                  User?     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  user     User?    @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  episode  Episode? @relation(fields: [episode_id], references: [id], onDelete: Cascade)
-
-  @@unique([user_id, episode_id])
+  @@unique([userId, episodeId])
+  @@index([episodeId], map: "idx_purchases_episode_id")
+  @@index([userId], map: "idx_purchases_user_id")
+  @@map("purchases")
 }
 
 model CaseBundle {
-  id                       Int      @id @default(autoincrement())
-  case_id                  Int?
-  user_id                  Int?
-  price_paid_cents         Int
-  stripe_payment_intent_id String? @unique
-  purchased_at             DateTime @default(now())
+  id                    Int       @id @default(autoincrement())
+  caseId                Int?      @map("case_id")
+  userId                Int?      @map("user_id")
+  pricePaidCents        Int       @map("price_paid_cents")
+  stripePaymentIntentId String?   @unique @map("stripe_payment_intent_id") @db.VarChar(255)
+  purchasedAt           DateTime? @default(now()) @map("purchased_at") @db.Timestamp(6)
+  case                  Case?     @relation(fields: [caseId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user                  User?     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  user  User?  @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  case  Case?  @relation(fields: [case_id], references: [id], onDelete: Cascade)
-
-  @@unique([user_id, case_id])
+  @@unique([userId, caseId])
+  @@index([userId], map: "idx_case_bundles_user_id")
+  @@map("case_bundles")
 }
 
 model Subscription {
-  id                    Int      @id @default(autoincrement())
-  user_id               Int?
-  stripe_subscription_id String   @unique
-  status                String
-  current_period_end    DateTime?
-  created_at            DateTime  @default(now())
-  updated_at            DateTime  @default(now())
+  id                   Int       @id @default(autoincrement())
+  userId               Int?      @map("user_id")
+  stripeSubscriptionId String    @unique @map("stripe_subscription_id") @db.VarChar(255)
+  status               String    @db.VarChar(50)
+  currentPeriodEnd     DateTime? @map("current_period_end") @db.Timestamp(6)
+  createdAt            DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt            DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  user                 User?     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  user User? @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-  @@index([user_id])
+  @@index([userId], map: "idx_subscriptions_user_id")
+  @@map("subscriptions")
 }
