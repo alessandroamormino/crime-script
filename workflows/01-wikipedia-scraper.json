@@ -55,7 +55,7 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
       "position": [
-        1296,
+        1280,
         0
       ],
       "id": "91e51d9a-79d3-462b-a049-12356d28ddf4",
@@ -70,7 +70,7 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
       "position": [
-        1616,
+        1600,
         0
       ],
       "id": "f6c53108-d4c2-43ac-a61f-3956c72d9a8f",
@@ -85,7 +85,7 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
       "position": [
-        1936,
+        1920,
         0
       ],
       "id": "28495e94-a38a-4fa5-a94e-96a057e92725",
@@ -98,7 +98,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2256,
+        2224,
         0
       ],
       "id": "01ccbd7f-65e9-4b39-b3c3-9c96e4118ed3",
@@ -111,7 +111,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2464,
+        2416,
         0
       ],
       "id": "adbd6c05-1b00-4d1f-b677-1f4b6ae6e387",
@@ -130,7 +130,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        1216,
+        1424,
         464
       ],
       "id": "b65e7089-a492-4a42-a4d2-808e04394d82",
@@ -171,7 +171,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=You are a true crime podcast series writer. Create an outline for EPISODE {{ $json.episode_number }} of {{ $json.total_episodes }} about this case.\n\nCASE: {{ $json.case_name }}\nEPISODE: {{ $json.episode_number }} of {{ $json.total_episodes }}\nWIKIPEDIA SUMMARY: {{ $('Extract Text').item.json.raw_text }}\n\nCreate a detailed outline for THIS SPECIFIC EPISODE that:\n- Covers approximately 1/3 of the total story (this is episode {{ $json.episode_number }} of {{ $json.total_episodes }})\n- Has a compelling cliffhanger ending to hook listeners for the next episode\n- Feels complete but leaves them wanting more\n\nEpisode breakdown guide:\n- Episode 1: Early life, first crimes, initial investigation\n- Episode 2: Escalation, manhunt, captures and escapes\n- Episode 3: Final capture, trial, execution, legacy\n\nRespond with JSON:\n{\n  \"episode_title\": \"Compelling episode-specific title\",\n  \"episode_number\": {{ $json.episode_number }},\n  \"total_episodes\": {{ $json.total_episodes }},\n  \"hook\": \"Episode-specific hook\",\n  \"act1_intro\": \"What happens in act 1 of THIS episode\",\n  \"act2_investigation\": \"What happens in act 2 of THIS episode\",\n  \"act3_resolution\": \"What happens in act 3 - MUST end with cliffhanger for next episode (unless this is the final episode)\",\n  \"cliffhanger\": \"The suspenseful moment that makes them want the next episode\",\n  \"key_facts\": [\"relevant facts for this episode\"],\n  \"timeline\": [\"events covered in this episode\"]\n}\n\nLanguage: ITALIAN\nONLY JSON, no markdown.",
+        "text": "=You are a true crime podcast series writer. Create an outline for EPISODE {{ $json.episode_number }} of {{ $json.total_episodes }} about this case.\n\nCRITICAL INSTRUCTION: You MUST create content for episode number {{ $json.episode_number }}, NOT episode 1.\n\nCASE: {{ $json.case_name }}\nCURRENT EPISODE NUMBER: {{ $json.episode_number }} (THIS IS THE EPISODE YOU MUST WRITE)\nTOTAL EPISODES: {{ $json.total_episodes }}\nWIKIPEDIA SUMMARY: {{ $('Extract Text').item.json.raw_text }}\n\nCreate a detailed outline for EPISODE {{ $json.episode_number }} ONLY that:\n- Covers the portion of the story appropriate for episode {{ $json.episode_number }} out of {{ $json.total_episodes }}\n- Has a compelling cliffhanger ending (unless this is episode {{ $json.total_episodes }})\n- Feels complete but leaves them wanting more\n\nEpisode breakdown guide (FOLLOW THIS STRICTLY):\n- Episode 1: Early life, background, first crimes, initial investigation\n- Episode 2: Escalation of crimes, manhunt intensifies, captures and dramatic escapes\n- Episode 3: Final capture, trial proceedings, execution, lasting legacy\n\nRESPOND WITH THIS EXACT JSON STRUCTURE (with episode_number set to {{ $json.episode_number }}):\n{\n  \"episode_title\": \"Compelling title for EPISODE {{ $json.episode_number }} specifically\",\n  \"episode_number\": {{ $json.episode_number }},\n  \"total_episodes\": {{ $json.total_episodes }},\n  \"hook\": \"Hook specific to episode {{ $json.episode_number }}\",\n  \"act1_intro\": \"Content for act 1 of EPISODE {{ $json.episode_number }}\",\n  \"act2_investigation\": \"Content for act 2 of EPISODE {{ $json.episode_number }}\",\n  \"act3_resolution\": \"Content for act 3 of EPISODE {{ $json.episode_number }} - must end with cliffhanger unless final episode\",\n  \"cliffhanger\": \"The suspenseful moment for episode {{ $json.episode_number }}\",\n  \"key_facts\": [\"relevant facts for THIS episode\"],\n  \"timeline\": [\"events covered in THIS episode\"]\n}\n\nLanguage: ITALIAN\nONLY JSON, no markdown.\nREMEMBER: THIS IS EPISODE {{ $json.episode_number }}, NOT EPISODE 1!",
         "batching": {}
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
@@ -185,7 +185,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Parse la risposta AI\nlet outline;\ntry {\n  // Anthropic restituisce la risposta in un formato diverso\n  const aiResponse = $input.item.json.text || $input.item.json.message?.content || $input.item.json.response;\n  \n  // Rimuove eventuali backtick markdown\n  const cleanJson = aiResponse.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n  outline = JSON.parse(cleanJson);\n} catch (error) {\n  return {\n    json: {\n      error: \"Failed to parse AI response\",\n      raw_ai_output: $input.item.json,\n      error_message: error.message\n    }\n  };\n}\n\nreturn {\n  json: {\n    case_name: $('Extract Text').item.json.case_name,\n    wiki_url: $('Extract Text').item.json.wiki_url,\n    outline: outline,\n    generated_at: new Date().toISOString()\n  }\n};"
+        "jsCode": "let outline;\ntry {\n  const aiResponse = $input.item.json.text;\n  const cleanJson = aiResponse.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim();\n  outline = JSON.parse(cleanJson);\n} catch (error) {\n  return {\n    json: {\n      error: \"Failed to parse AI response\",\n      raw_response: $input.item.json.text\n    }\n  };\n}\n\n// FORZA il numero episodio corretto dall'input originale\nconst correctEpisodeNumber = $('Prepare URL').item.json.episode_number;\noutline.episode_number = correctEpisodeNumber;\n\nreturn {\n  json: {\n    case_name: $('Extract Text').item.json.case_name,\n    wiki_url: $('Extract Text').item.json.wiki_url,\n    outline: outline,\n    generated_at: new Date().toISOString()\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -195,6 +195,171 @@
       ],
       "id": "afe0946e-9e0a-4cca-bbcf-c2958bb63499",
       "name": "Format Outline"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "cases",
+          "mode": "list",
+          "cachedResultName": "cases"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "name": "={{ $('Generate Full Script - JSON').item.json.case_name }}",
+            "slug": "={{ $('Generate Full Script - JSON').item.json.case_name.toLowerCase().replace(/ /g, '-') }}",
+            "wiki_url": "={{ $('Generate Full Script - JSON').item.json.wiki_url }}",
+            "total_episodes": "={{ $('Generate Full Script - JSON').item.json.total_episodes }}",
+            "id": 0
+          },
+          "matchingColumns": [
+            "name"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "slug",
+              "displayName": "slug",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "wiki_url",
+              "displayName": "wiki_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "total_episodes",
+              "displayName": "total_episodes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "cover_image_url",
+              "displayName": "cover_image_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2608,
+        0
+      ],
+      "id": "f2d93554-5fd2-42fd-b8a0-861c85f05eea",
+      "name": "Save Case",
+      "credentials": {
+        "postgres": {
+          "id": "OhetfMeQjWuLkDtw",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Generate Full Script - JSON').item.json;\nconst caseData = $input.item.json; // Output di Save Case\n\n// Debug: verifica cosa arriva da Save Case\nconsole.log('Case Data:', JSON.stringify(caseData));\n\n// Prendi l'ID del caso (gestisce diversi formati di output)\nconst caseId = caseData.id ?? caseData[0]?.id ?? 0;\n\n// Crea lo slug\nconst slug = data.case_name.toLowerCase().replace(/ /g, '-').replace(/_/g, '-');\n\nreturn {\n  json: {\n    case_id: caseId,\n    slug: slug,\n    case_name: data.case_name,\n    episode_number: data.episode_number,\n    episode_title: data.episode_title,\n    outline: data.outline,\n    full_script: data.full_script,\n    word_count: data.word_count,\n    estimated_duration_minutes: data.estimated_duration_minutes,\n    filename: data.filename_suggestion,\n    is_final_episode: data.is_final_episode,\n    price_cents: 499\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2816,
+        0
+      ],
+      "id": "c325d1b5-9d05-4a09-8e4f-6cb7726584ae",
+      "name": "Prepare Episode Data"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO episodes (\n  case_id,\n  episode_number,\n  episode_title,\n  outline,\n  full_script,\n  word_count,\n  estimated_duration_minutes,\n  filename,\n  is_final_episode,\n  price_cents\n)\nVALUES (\n  {{ $('Prepare Episode Data').item.json.case_id }}::integer,\n  {{ $('Prepare Episode Data').item.json.episode_number }}::integer,\n  $${{ $('Prepare Episode Data').item.json.episode_title }}$$::text,\n  $${{ JSON.stringify($('Prepare Episode Data').item.json.outline) }}$$::jsonb,\n  $${{ $('Prepare Episode Data').item.json.full_script }}$$::text,\n  {{ $('Prepare Episode Data').item.json.word_count }}::integer,\n  {{ $('Prepare Episode Data').item.json.estimated_duration_minutes }}::integer,\n  $${{ $('Prepare Episode Data').item.json.filename }}$$::text,\n  {{ $('Prepare Episode Data').item.json.is_final_episode }}::boolean,\n  {{ $('Prepare Episode Data').item.json.price_cents }}::integer\n)\nON CONFLICT (case_id, episode_number) \nDO UPDATE SET\n  episode_title = EXCLUDED.episode_title,\n  outline = EXCLUDED.outline,\n  full_script = EXCLUDED.full_script,\n  word_count = EXCLUDED.word_count,\n  estimated_duration_minutes = EXCLUDED.estimated_duration_minutes,\n  updated_at = NOW()\nRETURNING *;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3024,
+        0
+      ],
+      "id": "625f5df8-e958-41f2-bc84-408d5cfa03d6",
+      "name": "Save Episode",
+      "credentials": {
+        "postgres": {
+          "id": "OhetfMeQjWuLkDtw",
+          "name": "Postgres account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -334,13 +499,46 @@
           }
         ]
       ]
+    },
+    "Generate Full Script - JSON": {
+      "main": [
+        [
+          {
+            "node": "Save Case",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Case": {
+      "main": [
+        [
+          {
+            "node": "Prepare Episode Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Episode Data": {
+      "main": [
+        [
+          {
+            "node": "Save Episode",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "16a41776-fb15-4d2d-a8a8-d214c01974d3",
+  "versionId": "7e4eaee5-e9e1-427b-a6ef-c845e46e269b",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "672f0c1e027970f7c993323f9843bc22973e8f4cd989bae535dc30945ac51c47"
