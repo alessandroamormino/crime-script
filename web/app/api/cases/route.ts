@@ -1,9 +1,7 @@
 import { prisma } from '@/lib/prisma';
+import { NextResponse } from 'next/server';
 
 export async function GET() {
   const cases = await prisma.case.findMany({ include: { episodes: true } });
-  return new Response(JSON.stringify(cases), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  });
+  return NextResponse.json(cases);
 }
