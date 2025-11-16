@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                Int       @id @default(autoincrement())
+  email             String    @unique
+  password_hash     String
+  name              String?
+  stripe_customer_id String?  @unique
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @default(now())
+
+  purchases         Purchase[]
+  subscriptions     Subscription[]
+  case_bundles      CaseBundle[]
+}
+
+model Case {
+  id               Int       @id @default(autoincrement())
+  name             String    @unique
+  slug             String    @unique
+  wiki_url         String?
+  total_episodes   Int       @default(3)
+  description      String?
+  cover_image_url  String?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @default(now())
+
+  episodes         Episode[]
+  case_bundles     CaseBundle[]
+}
+
+model Episode {
+  id                         Int       @id @default(autoincrement())
+  case_id                    Int?
+  episode_number             Int
+  episode_title              String
+  outline                    Json
+  full_script                String
+  word_count                 Int?
+  estimated_duration_minutes Int?
+  filename                   String?
+  is_final_episode           Boolean   @default(false)
+  price_cents                Int       @default(499)
+  created_at                 DateTime  @default(now())
+  updated_at                 DateTime  @default(now())
+
+  case       Case?     @relation(fields: [case_id], references: [id], onDelete: Cascade)
+  purchases  Purchase[]
+}
+
+model Purchase {
+  id                       Int      @id @default(autoincrement())
+  user_id                  Int?
+  episode_id               Int?
+  price_paid_cents         Int
+  stripe_payment_intent_id String? @unique
+  purchased_at             DateTime @default(now())
+
+  user     User?    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  episode  Episode? @relation(fields: [episode_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, episode_id])
+}
+
+model CaseBundle {
+  id                       Int      @id @default(autoincrement())
+  case_id                  Int?
+  user_id                  Int?
+  price_paid_cents         Int
+  stripe_payment_intent_id String? @unique
+  purchased_at             DateTime @default(now())
+
+  user  User?  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  case  Case?  @relation(fields: [case_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, case_id])
+}
+
+model Subscription {
+  id                    Int      @id @default(autoincrement())
+  user_id               Int?
+  stripe_subscription_id String   @unique
+  status                String
+  current_period_end    DateTime?
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @default(now())
+
+  user User? @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+}
