@@ -1,19 +1,14 @@
 import { prisma } from '@/lib/prisma';
+import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const casesList = await prisma.Case.findMany({
+    const cases = await prisma.Case.findMany({
       include: { episodes: true },
     });
-    return new Response(JSON.stringify(casesList), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  } catch (error) {
-    console.error('API /cases error:', error);
-    return new Response(
-      JSON.stringify({ error: 'Internal Server Error', details: error }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return NextResponse.json(cases);
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
